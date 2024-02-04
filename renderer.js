@@ -93,11 +93,11 @@ const showReadFile = (directoriesSelected) => {
 };
 
 const manipulateFile = () => {
-  fs.readdir(directorySelected, (err, files) => {
+  fs.readdir(directoriesSelected, (err, files) => {
     if (err) return console.error(err.message);
 
     files.forEach((file) => {
-      fs.lstat(path.join(directorySelected, file), async (err, stats) => {
+      fs.lstat(path.join(directoriesSelected, file), async (err, stats) => {
         if (err) return console.log(err); //Handle error
 
         // const item = document.createElement("li");
@@ -109,8 +109,8 @@ const manipulateFile = () => {
 
           fs_extra
             .copy(
-              path.join(directorySelected, file.toString()),
-              path.join(directorySelected, newDirectory + "\\" + file)
+              path.join(directoriesSelected, file.toString()),
+              path.join(directoriesSelected, newDirectory + "\\" + file)
             )
             .then(() =>
               console.log(
@@ -134,5 +134,5 @@ ipcRenderer.on("open-file", (event, result) => {
 });
 
 convertButton?.addEventListener("click", async () => {
-  //   if (directorySelected !== '' && directorySelected !== null && directorySelected !== undefined) manipulateFile();
+    if (directoriesSelected !== '' && directoriesSelected !== null && directoriesSelected !== undefined) manipulateFile();
 });
