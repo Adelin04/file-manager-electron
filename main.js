@@ -46,6 +46,7 @@ const createWindow = () => {
   mainWindow = new BrowserWindow({
     width: 1000,
     height: 600,
+    // resizable:false,
     fullscreen: false,
     // The lines below solved the issue
     webPreferences: {
@@ -90,17 +91,19 @@ app.on("activate", () => {
 
 const fileOpen = async () => {
   const files = await dialog.showOpenDialog(mainWindow, {
-    properties: ["multiSelections", "openFile"],
+    properties: ["multiSelections","openDirectory"],
   });
-
   if (!files) return;
+  
+  console.log('...',files);
 
-    //manipulate the first file to extract the pathDirectory
+  //manipulate the first file to extract the pathDirectory
   const indexOfLastSlash = files.filePaths[0].lastIndexOf("\\");
   const directorySelected = files.filePaths[0].slice(0, indexOfLastSlash);
 
   mainWindow.webContents.send("open-file", {
-    directorySelected: directorySelected.trim().toString(),
+    directoriesSelected: files.filePaths,
+    // directorySelected: directorySelected.trim().toString(),
   });
 
 };
