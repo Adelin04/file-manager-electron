@@ -45,7 +45,7 @@ const createWindow = () => {
   // Create the browser window.
   mainWindow = new BrowserWindow({
     width: 1200,
-    height: 600,
+    height: 700,
     // resizable:false,
     fullscreen: false,
     // The lines below solved the issue

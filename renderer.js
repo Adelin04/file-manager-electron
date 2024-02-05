@@ -31,11 +31,6 @@ getPathDirectory = () => {
   newInput.click();
 };
 
-
-const readDirectory = (directory) => {
-
-}
-
 const showReadFile = (directoriesSelected) => {
   //we check if there are already open files and if there are, we clear the list before adding other files
   if (!emptyList) listOfFiles.innerHTML = "";
