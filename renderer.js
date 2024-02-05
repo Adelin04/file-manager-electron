@@ -31,12 +31,19 @@ getPathDirectory = () => {
   newInput.click();
 };
 
+
+const readDirectory = (directory) => {
+
+}
+
 const showReadFile = (directoriesSelected) => {
   //we check if there are already open files and if there are, we clear the list before adding other files
   if (!emptyList) listOfFiles.innerHTML = "";
 
   //foreach directory from selected path
-  directoriesSelected.map((directory) => {
+  directoriesSelected.map(async (directory) => {
+
+
     // create and add new div
     const div = document.createElement("div");
     div.setAttribute("class", "container-element");
@@ -56,8 +63,10 @@ const showReadFile = (directoriesSelected) => {
     div.append(wrapperLabelNameFolder);
 
     fs.readdir(directory, (err, files) => {
-      files.forEach((file) => {
+
+      files.map((file) => {
         fs.lstat(path.join(directory, file), async (err, stats) => {
+          // console.log(directory + "  =>  " + file);
           if (err) return console.log(err); //Handle error
 
           //manipulate the directory path to extract the name of folder
@@ -66,36 +75,47 @@ const showReadFile = (directoriesSelected) => {
 
           labelNameFolder.innerText = folderName.toString();
 
-          // create and add new div
-          const wrapperElements = document.createElement("wrapperElements");
-          wrapperElements.setAttribute("class", "wrapper-elements");
+          if (stats.isFile()) {
 
-          // create and add new checkbox
-          const checkbox = document.createElement("input");
-          checkbox.type = "checkbox";
-          checkbox.setAttribute("class", "checkbox-input");
+            // create and add new div
+            const wrapperElements = document.createElement("wrapperElements");
+            wrapperElements.setAttribute("class", "wrapper-elements");
 
-          // create and add new li in files list
-          const item = document.createElement("li");
-          item.setAttribute("class", "item-added");
+            // create and add new checkbox
+            const checkbox = document.createElement("input");
+            checkbox.type = "checkbox";
+            checkbox.setAttribute("class", "checkbox-input");
 
-          wrapperElements.append(checkbox);
-          wrapperElements.append(item);
-          div.append(wrapperElements);
+            // create and add new li in files list
+            const item = document.createElement("li");
+            item.setAttribute("class", "item-added");
 
-          item.textContent = file.length < 30 ? file : file.slice(0, 30) + "...";
-          listOfFiles.appendChild(div);
+            wrapperElements.append(checkbox);
+            wrapperElements.append(item);
+            div.append(wrapperElements);
+
+
+            item.textContent = file.length < 30 ? file : file.slice(0, 30) + "...";
+            listOfFiles.appendChild(div);
+          }
+
+          if (stats.isDirectory()) {
+            showReadFile([directory + '\\' + file]);
+          }
+
           emptyList = false;
         });
       });
+
     });
+
   });
 };
 
 const manipulateFile = () => {
   fs.readdir(directoriesSelected, (err, files) => {
     if (err) return console.error(err.message);
-
+    console.log(files);
     files.forEach((file) => {
       fs.lstat(path.join(directoriesSelected, file), async (err, stats) => {
         if (err) return console.log(err); //Handle error
@@ -133,6 +153,11 @@ ipcRenderer.on("open-file", (event, result) => {
   showReadFile(directoriesSelected);
 });
 
+
+
 convertButton?.addEventListener("click", async () => {
-    if (directoriesSelected !== '' && directoriesSelected !== null && directoriesSelected !== undefined) manipulateFile();
+  // start the search in the current directory
+  // testRead()
+  getFilesRecursively('E:\\___ADELIN___\\__UTILS__\\projects\\file-manager-electron\\testFile');
+  // if (directoriesSelected !== '' && directoriesSelected !== null && directoriesSelected !== undefined) manipulateFile();
 });
