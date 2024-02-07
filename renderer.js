@@ -1,3 +1,4 @@
+const spinner = document.getElementById("spinner");
 const { ipcRenderer } = require("electron");
 const fs = require("fs");
 const fs_extra = require("fs-extra");
@@ -12,40 +13,26 @@ let directoriesSelected = null;
 let emptyList = true;
 // let src_path = path.join(__dirname,'./testFile');
 
-getPathDirectory = () => {
-  let newInput = document.createElement("input");
-  newInput.type = "file";
-  newInput.webkitdirectory = "true";
-  newInput.onchange = (_) => {
-    let files = Array.from(newInput.files);
-    const path = String(newInput.value);
-    const indexOfLastSlash = path.lastIndexOf("\\");
-    directorySelected = path.slice(0, indexOfLastSlash + 1);
-
-    console.log("_", directorySelected);
-    // console.log(path);
-    // console.log(indexOfLastSlash);
-    // console.log(directorySelected);
-  };
-
-  newInput.click();
+const onOffSpinner = (toggle = Boolean) => {
+  console.log(toggle);
+  if (toggle) spinner.setAttribute("class", "spinner-on");
+  if (!toggle) spinner.setAttribute("class", "spinner-off");
 };
 
-const showReadFile = (directoriesSelected) => {
+const ReadFile = async (directoriesSelected, callback) => {
   //we check if there are already open files and if there are, we clear the list before adding other files
-  if (!emptyList) listOfFiles.innerHTML = "";
+  spinner.classList.replace("spinner-off", "spinner-on");
+  // create and add new div
+  const div = document.createElement("div");
+  div.setAttribute("class", "container-element");
+  // if (!emptyList) listOfFiles.innerHTML = "";
 
   //foreach directory from selected path
-  directoriesSelected.map(async (directory) => {
-
-
-    // create and add new div
-    const div = document.createElement("div");
-    div.setAttribute("class", "container-element");
-
+  directoriesSelected.map((directory) => {
     const wrapperLabelNameFolder = document.createElement("div");
     wrapperLabelNameFolder.setAttribute("class", "wrapper-label-name-folder");
 
+    // create img element,assign an image and add the element in files list
     const imageLabelNameFolder = document.createElement("img");
     imageLabelNameFolder.src = "./assets/folder.svg";
     imageLabelNameFolder.setAttribute("class", "image-label-name-folder");
@@ -58,9 +45,8 @@ const showReadFile = (directoriesSelected) => {
     div.append(wrapperLabelNameFolder);
 
     fs.readdir(directory, (err, files) => {
-
-      files.map((file) => {
-        fs.lstat(path.join(directory, file), async (err, stats) => {
+      files.map(async(file) => {
+        fs.lstat(path.join(directory, file), (err, stats) => {
           // console.log(directory + "  =>  " + file);
           if (err) return console.log(err); //Handle error
 
@@ -71,7 +57,6 @@ const showReadFile = (directoriesSelected) => {
           labelNameFolder.innerText = folderName.toString();
 
           if (stats.isFile()) {
-
             // create and add new div
             const wrapperElements = document.createElement("wrapperElements");
             wrapperElements.setAttribute("class", "wrapper-elements");
@@ -89,21 +74,17 @@ const showReadFile = (directoriesSelected) => {
             wrapperElements.append(item);
             div.append(wrapperElements);
 
-
-            item.textContent = file.length < 30 ? file : file.slice(0, 30) + "...";
+            item.textContent =
+              file.length < 30 ? file : file.slice(0, 30) + "...";
             listOfFiles.appendChild(div);
           }
 
           if (stats.isDirectory()) {
-            showReadFile([directory + '\\' + file]);
+            ReadFile([directory + "\\" + file]);
           }
-
-          emptyList = false;
         });
       });
-
-    });
-
+    })
   });
 };
 
@@ -143,16 +124,35 @@ const manipulateFile = () => {
   });
 };
 
-ipcRenderer.on("open-file", (event, result) => {
+function start(startFunc, callback) {
+  startFunc();
+}
+
+ipcRenderer.on("open-file", async (event, result) => {
   directoriesSelected = result.directoriesSelected;
-  showReadFile(directoriesSelected);
+  ReadFile(directoriesSelected);
 });
-
-
 
 convertButton?.addEventListener("click", async () => {
-  // start the search in the current directory
-  // testRead()
-  getFilesRecursively('E:\\___ADELIN___\\__UTILS__\\projects\\file-manager-electron\\testFile');
   // if (directoriesSelected !== '' && directoriesSelected !== null && directoriesSelected !== undefined) manipulateFile();
 });
+// spinner.classList.replace("spinner-on","spinner-off")
+
+// const getPathDirectory = () => {
+//   let newInput = document.createElement("input");
+//   newInput.type = "file";
+//   newInput.webkitdirectory = "true";
+//   newInput.onchange = (_) => {
+//     let files = Array.from(newInput.files);
+//     const path = String(newInput.value);
+//     const indexOfLastSlash = path.lastIndexOf("\\");
+//     directorySelected = path.slice(0, indexOfLastSlash + 1);
+
+//     console.log("_", directorySelected);
+//     // console.log(path);
+//     // console.log(indexOfLastSlash);
+//     // console.log(directorySelected);
+//   };
+
+//   newInput.click();
+// };
