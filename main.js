@@ -44,7 +44,7 @@ const mainMenu = [
 const createWindow = () => {
   // Create the browser window.
   mainWindow = new BrowserWindow({
-    width: 1200,
+    width: 1400,
     height: 700,
     // resizable:false,
     fullscreen: false,
