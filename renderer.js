@@ -111,56 +111,113 @@ const loaded = (e) => {
   console.log('Result:', result);
 }
 
-const exe =  () => {
-  
-   readAllFile(directoriesSelected);
-   
+const exe = () => {
+
+  // readAllFile(directoriesSelected);
+
   //  return new Promise((resolve, reject) => {
   //    resolve(readAllFile(directoriesSelected));
   //    loading = false;
   //    onOffSpinnerEvent(loading);
   //   });
 
-  };
-  
-  ipcRenderer.on("open-file", async (event, result) => {
-    loading = true;
-    onOffSpinnerEvent(loading);
-    directoriesSelected = result.directoriesSelected;
-    exe();
-    // loading = false;
-    // onOffSpinnerEvent(loading);
+};
+
+ipcRenderer.on("open-file", async (event, result) => {
+  loading = true;
+  onOffSpinnerEvent(loading);
+  directoriesSelected = result.directoriesSelected;
+  directoriesSelected && await readAllFileAsync(directoriesSelected);
+  // exe();
+  // loading = false;
+  // onOffSpinnerEvent(loading);
 });
 
 function readAllFile(directoriesSelected) {
-  
+
   directoriesSelected.forEach((directory) => {
     const indexOfLastSlash = directory.lastIndexOf("\\");
     const folderName = directory.slice(indexOfLastSlash + 1);
     container.append(addNewDirectory(folderName));
-    
+
     const res = fs.readdirSync(directory);
     const folders = res.filter((file) =>
-    fs.lstatSync(path.resolve(directory, file)).isDirectory()
+      fs.lstatSync(path.resolve(directory, file)).isDirectory()
     );
     res.map((file) => {
       if (fs.lstatSync(path.resolve(directory, file)).isFile()) {
         container.append(addNewFile(file));
       }
     });
-    
+
     const innerDirectory = folders.map((folder) =>
-    path.resolve(directory, folder)
+      path.resolve(directory, folder)
     );
-    
+
     if (innerDirectory.length === 0) {
       return;
     }
-    
+
     // innerDirectory.forEach(innerFile => console.log('innerFile', innerFile))
-    
+
     readAllFile(innerDirectory);
   });
+}
+
+async function readAllFileAsync(directoriesSelected) {
+
+  directoriesSelected?.forEach((directory) => {
+
+    const indexOfLastSlash = directory.lastIndexOf("\\");
+    const folderName = directory.slice(indexOfLastSlash + 1);
+    container.append(addNewDirectory(folderName));
+
+    fs.readdir(directory, 'utf8', (err, files) => {
+      if (err) { console.log(err) }
+
+
+      const folders = files.filter((file) => {
+        const currentPath = path.resolve(directory, file);
+console.log(currentPath.isDirectory());
+        fs.lstat(currentPath, (err) => {
+          if (err) console.log(err);
+          return currentPath.isDirectory()
+        })
+      });
+
+      files?.map((file) => {
+        console.log('folders', folders);
+
+        const innerDirectory = folders.map((folder) => path.resolve(directory, folder));
+        if (innerDirectory.length === 0) {
+          return;
+        }
+        readAllFile(innerDirectory);
+
+      });
+
+
+
+    });
+
+
+    // const folders = res?.filter((file) => fs.lstat(path.resolve(directory, file)).isDirectory());
+
+    // res?.map((file) => { if (fs.lstat(path.resolve(directory, file)).isFile()) { container.append(addNewFile(file)) } });
+
+    // const innerDirectory = folders?.map((folder) =>
+    //   path.resolve(directory, folder)
+    // );
+
+    // if (innerDirectory?.length === 0) {
+    //   return;
+    // }
+
+    // // innerDirectory.forEach(innerFile => console.log('innerFile', innerFile))
+
+    // readAllFileAsync(innerDirectory);
+
+  })
 }
 
 convertButton?.addEventListener("click", async () => {
