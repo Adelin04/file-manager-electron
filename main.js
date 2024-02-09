@@ -98,12 +98,11 @@ const fileOpen = async () => {
   console.log('...',files);
 
   //manipulate the first file to extract the pathDirectory
-  const indexOfLastSlash = files.filePaths[0].lastIndexOf("\\");
-  const directorySelected = files.filePaths[0].slice(0, indexOfLastSlash);
+  // const indexOfLastSlash = files.filePaths[0].lastIndexOf("\\");
+  // const directorySelected = files.filePaths[0].slice(0, indexOfLastSlash);
 
   mainWindow.webContents.send("open-file", {
     directoriesSelected: files.filePaths,
-    // directorySelected: directorySelected.trim().toString(),
   });
 
 };

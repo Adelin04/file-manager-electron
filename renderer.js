@@ -11,12 +11,11 @@ const leftContainer = document.getElementById("leftContainer");
 const listOfFiles = document.getElementById("listOfFiles");
 
 let directoriesSelected = null;
+let loading = false;
 
-
-const onOffSpinner = (toggle = Boolean) => {
-  console.log(toggle);
-  if (toggle) spinner.setAttribute("class", "spinner-on");
-  if (!toggle) spinner.setAttribute("class", "spinner-off");
+const onOffSpinnerEvent = (toggle = Boolean) => {
+  if (toggle) spinner.classList.replace("spinner-off", "spinner-on");
+  else spinner.classList.replace("spinner-on", "spinner-off");
 };
 
 const container = document.createElement("div");
@@ -100,53 +99,71 @@ const addNewFile = (fileName) => {
   return wrapperElements;
 };
 
-
-const exe = async () => {
- return new Promise((resolve, reject) => {
-    resolve(readAllFile(directoriesSelected))
-  })
+const changeStatus = (status) => {
+  document.getElementById('spinner').innerHTML = status;
 }
 
+const loaded = (e) => {
+  const fr = e.target;
+  var result = fr.result;
 
-ipcRenderer.on("open-file", async (event, result) => {
-  directoriesSelected = result.directoriesSelected;
-  spinner.classList.replace("spinner-off", "spinner-on")
+  changeStatus('Finished Loading!');
+  console.log('Result:', result);
+}
 
-  exe()
-  // spinner.classList.replace("spinner-on", "spinner-off");
-  // readAllFile(directoriesSelected);
+const exe =  () => {
+  
+   readAllFile(directoriesSelected);
+   
+  //  return new Promise((resolve, reject) => {
+  //    resolve(readAllFile(directoriesSelected));
+  //    loading = false;
+  //    onOffSpinnerEvent(loading);
+  //   });
+
+  };
+  
+  ipcRenderer.on("open-file", async (event, result) => {
+    loading = true;
+    onOffSpinnerEvent(loading);
+    directoriesSelected = result.directoriesSelected;
+    exe();
+    // loading = false;
+    // onOffSpinnerEvent(loading);
 });
 
 function readAllFile(directoriesSelected) {
-
+  
   directoriesSelected.forEach((directory) => {
     const indexOfLastSlash = directory.lastIndexOf("\\");
     const folderName = directory.slice(indexOfLastSlash + 1);
     container.append(addNewDirectory(folderName));
-
-    const res = fs.readdirSync(directory)
-    const folders = res.filter(file => fs.lstatSync(path.resolve(directory, file)).isDirectory())
-    res.map(file => {
+    
+    const res = fs.readdirSync(directory);
+    const folders = res.filter((file) =>
+    fs.lstatSync(path.resolve(directory, file)).isDirectory()
+    );
+    res.map((file) => {
       if (fs.lstatSync(path.resolve(directory, file)).isFile()) {
         container.append(addNewFile(file));
       }
-    })
-
-    const innerDirectory = folders.map(folder => path.resolve(directory, folder));
-
-    if (innerDirectory.length === 0) { return }
-
+    });
+    
+    const innerDirectory = folders.map((folder) =>
+    path.resolve(directory, folder)
+    );
+    
+    if (innerDirectory.length === 0) {
+      return;
+    }
+    
     // innerDirectory.forEach(innerFile => console.log('innerFile', innerFile))
-
+    
     readAllFile(innerDirectory);
-
   });
-
 }
-
 
 convertButton?.addEventListener("click", async () => {
   // if (directoriesSelected !== '' && directoriesSelected !== null && directoriesSelected !== undefined) manipulateFile();
 });
 // spinner.classList.replace("spinner-on","spinner-off")
-
