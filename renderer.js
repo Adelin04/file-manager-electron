@@ -178,7 +178,8 @@ async function readAllFileAsync(directoriesSelected) {
 
       const folders = files.filter((file) => {
         const currentPath = path.resolve(directory, file);
-console.log(currentPath.isDirectory());
+        console.log(currentPath.isDirectory());
+        
         fs.lstat(currentPath, (err) => {
           if (err) console.log(err);
           return currentPath.isDirectory()
