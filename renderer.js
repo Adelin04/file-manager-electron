@@ -4,13 +4,13 @@ const fs = require("fs");
 const { readdir } = require("node:fs/promises");
 const fs_extra = require("fs-extra");
 const path = require("path");
-const glob = require("glob");
+const { join } = require("path");
+
 
 const convertButton = document.getElementById("convertButton");
 const leftContainer = document.getElementById("leftContainer");
 const listOfFiles = document.getElementById("listOfFiles");
 
-let directoriesSelected = null;
 let loading = false;
 
 const onOffSpinnerEvent = (toggle = Boolean) => {
@@ -99,48 +99,24 @@ const addNewFile = (fileName) => {
   return wrapperElements;
 };
 
-const changeStatus = (status) => {
-  document.getElementById('spinner').innerHTML = status;
-}
-
-const loaded = (e) => {
-  const fr = e.target;
-  var result = fr.result;
-
-  changeStatus('Finished Loading!');
-  console.log('Result:', result);
-}
-
-const exe = () => {
-
-  // readAllFile(directoriesSelected);
-
-  //  return new Promise((resolve, reject) => {
-  //    resolve(readAllFile(directoriesSelected));
-  //    loading = false;
-  //    onOffSpinnerEvent(loading);
-  //   });
-
-};
-
 ipcRenderer.on("open-file", async (event, result) => {
   loading = true;
   onOffSpinnerEvent(loading);
-  directoriesSelected = result.directoriesSelected;
-  directoriesSelected && await readAllFileAsync(directoriesSelected);
-  // exe();
-  // loading = false;
-  // onOffSpinnerEvent(loading);
+
+  // await readAllFile(result.directoriesSelected);
+  await readAllFileAsync(result.directoriesSelected[0]);
+  loading = false;
+  onOffSpinnerEvent(loading);
 });
 
 function readAllFile(directoriesSelected) {
-
   directoriesSelected.forEach((directory) => {
     const indexOfLastSlash = directory.lastIndexOf("\\");
     const folderName = directory.slice(indexOfLastSlash + 1);
     container.append(addNewDirectory(folderName));
 
     const res = fs.readdirSync(directory);
+
     const folders = res.filter((file) =>
       fs.lstatSync(path.resolve(directory, file)).isDirectory()
     );
@@ -165,60 +141,27 @@ function readAllFile(directoriesSelected) {
 }
 
 async function readAllFileAsync(directoriesSelected) {
+  let innerDirectory = [];
 
-  directoriesSelected?.forEach((directory) => {
+  const indexOfLastSlash = directoriesSelected.lastIndexOf("\\");
+  const folderName = directoriesSelected.slice(indexOfLastSlash + 1);
+  container.append(addNewDirectory(folderName));
 
-    const indexOfLastSlash = directory.lastIndexOf("\\");
-    const folderName = directory.slice(indexOfLastSlash + 1);
-    container.append(addNewDirectory(folderName));
+  const files = await readdir(directoriesSelected.toString(), {
+    withFileTypes: true,
+  });
 
-    fs.readdir(directory, 'utf8', (err, files) => {
-      if (err) { console.log(err) }
+  files.sort().map(async (file) => {
+    const path = join(directoriesSelected.toString(), file.name);
+    if (file.isFile()) container.append(addNewFile(file.name));
+    if (file.isDirectory()) innerDirectory.push(path);
+  });
 
+  if (innerDirectory.length === 0) {
+    return;
+  }
 
-      const folders = files.filter((file) => {
-        const currentPath = path.resolve(directory, file);
-        console.log(currentPath.isDirectory());
-        
-        fs.lstat(currentPath, (err) => {
-          if (err) console.log(err);
-          return currentPath.isDirectory()
-        })
-      });
-
-      files?.map((file) => {
-        console.log('folders', folders);
-
-        const innerDirectory = folders.map((folder) => path.resolve(directory, folder));
-        if (innerDirectory.length === 0) {
-          return;
-        }
-        readAllFile(innerDirectory);
-
-      });
-
-
-
-    });
-
-
-    // const folders = res?.filter((file) => fs.lstat(path.resolve(directory, file)).isDirectory());
-
-    // res?.map((file) => { if (fs.lstat(path.resolve(directory, file)).isFile()) { container.append(addNewFile(file)) } });
-
-    // const innerDirectory = folders?.map((folder) =>
-    //   path.resolve(directory, folder)
-    // );
-
-    // if (innerDirectory?.length === 0) {
-    //   return;
-    // }
-
-    // // innerDirectory.forEach(innerFile => console.log('innerFile', innerFile))
-
-    // readAllFileAsync(innerDirectory);
-
-  })
+  readAllFile(innerDirectory);
 }
 
 convertButton?.addEventListener("click", async () => {
