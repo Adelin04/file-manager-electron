@@ -6,10 +6,10 @@ const fs_extra = require("fs-extra");
 const path = require("path");
 const { join } = require("path");
 
-
 const convertButton = document.getElementById("convertButton");
 const leftContainer = document.getElementById("leftContainer");
 const listOfFiles = document.getElementById("listOfFiles");
+let listOfFilesToCopy = [];
 
 let loading = false;
 
@@ -77,12 +77,16 @@ const addNewDirectory = (folderName) => {
   return wrapperLabelNameFolder;
 };
 
-const addNewFile = (fileName) => {
+const addNewFile = (fileName, path = null) => {
   const wrapperElements = document.createElement("wrapperElements");
   wrapperElements.setAttribute("class", "wrapper-elements");
 
-  // create and add new checkbox
+  // create and add new input checkbox
   const checkbox = document.createElement("input");
+  checkbox.value = path;
+  checkbox.addEventListener("change", async (e) => {
+    listOfFilesToCopy.push(e.target.value);
+  });
   checkbox.type = "checkbox";
   checkbox.setAttribute("class", "checkbox-input");
 
@@ -93,21 +97,10 @@ const addNewFile = (fileName) => {
   wrapperElements.append(checkbox);
   wrapperElements.append(item);
 
-  item.textContent =
-    fileName.length < 30 ? fileName : fileName.slice(0, 30) + "...";
+  item.textContent = fileName; // fileName.length < 30 ? fileName : fileName.slice(0, 30) + "...";
 
   return wrapperElements;
 };
-
-ipcRenderer.on("open-file", async (event, result) => {
-  loading = true;
-  onOffSpinnerEvent(loading);
-
-  // await readAllFile(result.directoriesSelected);
-  await readAllFileAsync(result.directoriesSelected[0]);
-  loading = false;
-  onOffSpinnerEvent(loading);
-});
 
 function readAllFile(directoriesSelected) {
   directoriesSelected.forEach((directory) => {
@@ -122,7 +115,7 @@ function readAllFile(directoriesSelected) {
     );
     res.map((file) => {
       if (fs.lstatSync(path.resolve(directory, file)).isFile()) {
-        container.append(addNewFile(file));
+        container.append(addNewFile(file, path.resolve(directory, file)));
       }
     });
 
@@ -140,31 +133,53 @@ function readAllFile(directoriesSelected) {
   });
 }
 
-async function readAllFileAsync(directoriesSelected) {
+const readAllFileAsync = async (directoriesSelected) => {
+  loading = true;
+  onOffSpinnerEvent(loading);
+  listOfFilesToCopy.length = 0;
+  // container.innerHTML = "";
+
   let innerDirectory = [];
+  directoriesSelected.map(async (directory) => {
+    const indexOfLastSlash = directory.lastIndexOf("\\");
+    const folderName = directory.slice(indexOfLastSlash + 1);
+    container.append(addNewDirectory(folderName));
 
-  const indexOfLastSlash = directoriesSelected.lastIndexOf("\\");
-  const folderName = directoriesSelected.slice(indexOfLastSlash + 1);
-  container.append(addNewDirectory(folderName));
+    const files = await readdir(directory.toString(), { withFileTypes: true });
 
-  const files = await readdir(directoriesSelected.toString(), {
-    withFileTypes: true,
+    files.map((file) => {
+      const path = join(directory.toString(), file.name);
+      // console.log("file", file);
+
+      if (file.isFile()) container.append(addNewFile(file.name, path));
+    });
+
+    const folders = files.filter((file) => file.isDirectory());
+
+    innerDirectory = folders.map((folder) => join(folder.path, folder.name));
+
+    console.log("innerDirectory", innerDirectory);
+
+    await readAllFileAsync(innerDirectory);
+    if (innerDirectory.length === 0) {
+      return;
+    }
   });
+};
 
-  files.sort().map(async (file) => {
-    const path = join(directoriesSelected.toString(), file.name);
-    if (file.isFile()) container.append(addNewFile(file.name));
-    if (file.isDirectory()) innerDirectory.push(path);
-  });
+ipcRenderer.on("open-file", async (event, result) => {
+  loading = true;
+  onOffSpinnerEvent(loading);
 
-  if (innerDirectory.length === 0) {
-    return;
-  }
+  // result.directoriesSelected.map(async (path) => await readAllFileAsync(path));
+  // readAllFile(result.directoriesSelected);
+  await readAllFileAsync(result.directoriesSelected);
 
-  readAllFile(innerDirectory);
-}
+  loading = false;
+  onOffSpinnerEvent(loading);
+});
 
 convertButton?.addEventListener("click", async () => {
+  console.log(listOfFilesToCopy);
   // if (directoriesSelected !== '' && directoriesSelected !== null && directoriesSelected !== undefined) manipulateFile();
 });
-// spinner.classList.replace("spinner-on","spinner-off")

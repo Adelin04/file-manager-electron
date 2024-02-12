@@ -28,7 +28,7 @@ const mainMenu = [
     submenu: [
       {
         label: "Open",
-        acclerator: "CmdOrCtrl+O",
+        // acclerator: "CmdOrCtrl+O",
         click: () => {
           console.log("open clicked");
           fileOpen();
