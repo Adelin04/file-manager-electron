@@ -152,18 +152,19 @@ const readAllFileAsync = async (directoriesSelected) => {
       // console.log("file", file);
 
       if (file.isFile()) container.append(addNewFile(file.name, path));
+      if (file.isDirectory()) innerDirectory.push(path);
     });
 
-    const folders = files.filter((file) => file.isDirectory());
+    // const folders = files.filter((file) => file.isDirectory());
 
-    innerDirectory = folders.map((folder) => join(folder.path, folder.name));
+    // innerDirectory = folders.map((folder) => join(folder.path, folder.name));
 
     console.log("innerDirectory", innerDirectory);
 
-    await readAllFileAsync(innerDirectory);
     if (innerDirectory.length === 0) {
       return;
     }
+    await readAllFileAsync(innerDirectory);
   });
 };
 
