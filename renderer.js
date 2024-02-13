@@ -139,39 +139,67 @@ const readAllFileAsync = async (directoriesSelected) => {
   listOfFilesToCopy.length = 0;
   // container.innerHTML = "";
 
+  console.log("directoriesSelected", directoriesSelected);
   let innerDirectory = [];
   directoriesSelected.map(async (directory) => {
-    const indexOfLastSlash = directory.lastIndexOf("\\");
-    const folderName = directory.slice(indexOfLastSlash + 1);
-    container.append(addNewDirectory(folderName));
+    ////////////// VARIANT_1 /////////////////
+    await readdir(directory.toString(), { withFileTypes: true }).then(
+      async (files) => {
+        const indexOfLastSlash = directory.lastIndexOf("\\");
+        const folderName = directory.slice(indexOfLastSlash + 1);
+        container.append(addNewDirectory(folderName));
+        console.log("files => ", files);
+        files.map((file) => {
+          const path = join(directory.toString(), file.name);
+          console.log("file", file);
+          if (file.isFile()) container.append(addNewFile(file.name, path));
+          if (file.isDirectory()) innerDirectory.push(path);
+        });
+        const folders = files.filter((file) => file.isDirectory());
+        innerDirectory = folders.map((folder) =>
+          join(folder.path, folder.name)
+        );
+        if (innerDirectory.length === 0) {
+          console.log("returned");
+          return;
+        }
+        await readAllFileAsync(innerDirectory);
+        console.log("innerDirectory", innerDirectory);
+      }
+    );
 
-    const files = await readdir(directory.toString(), { withFileTypes: true });
+    ////////////// VARIANT_2 /////////////////
+    // const files = await readdir(directory.toString(), { withFileTypes: true });
+    // console.log("directory", directory);
+    // files.map((file) => {
+    //   const indexOfLastSlash = directory.lastIndexOf("\\");
+    //   const folderName = directory.slice(indexOfLastSlash + 1);
+    //   container.append(addNewDirectory(folderName));
+    //   console.log("folderName", folderName);
 
-    files.map((file) => {
-      const path = join(directory.toString(), file.name);
-      // console.log("file", file);
-
-      if (file.isFile()) container.append(addNewFile(file.name, path));
-      if (file.isDirectory()) innerDirectory.push(path);
-    });
-
+    //   const path = join(directory.toString(), file.name);
+    //   console.log("file", file);
+    //   if (file.isFile()) container.append(addNewFile(file.name, path));
+    //   if (file.isDirectory()) innerDirectory.push(path);
+    // });
     // const folders = files.filter((file) => file.isDirectory());
-
     // innerDirectory = folders.map((folder) => join(folder.path, folder.name));
+    // console.log("innerDirectory", innerDirectory);
+    // if (innerDirectory.length === 0) {
+    //   console.log("returned");
+    //   return;
+    // }
+    // await readAllFileAsync(innerDirectory);
 
-    console.log("innerDirectory", innerDirectory);
 
-    if (innerDirectory.length === 0) {
-      return;
-    }
-    await readAllFileAsync(innerDirectory);
+
   });
 };
 
 ipcRenderer.on("open-file", async (event, result) => {
   loading = true;
   onOffSpinnerEvent(loading);
-
+  
   // result.directoriesSelected.map(async (path) => await readAllFileAsync(path));
   // readAllFile(result.directoriesSelected);
   await readAllFileAsync(result.directoriesSelected);
