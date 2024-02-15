@@ -13,9 +13,9 @@ let listOfFilesToCopy = [];
 
 let loading = false;
 
-const onOffSpinnerEvent = (toggle = Boolean) => {
+const spinnerEvent = (toggle = Boolean) => {
   if (toggle) spinner.classList.replace("spinner-off", "spinner-on");
-  else spinner.classList.replace("spinner-on", "spinner-off");
+  if (!toggle) spinner.classList.replace("spinner-on", "spinner-off");
 };
 
 const container = document.createElement("div");
@@ -135,7 +135,7 @@ function readAllFile(directoriesSelected) {
 
 const readAllFileAsync = async (directoriesSelected) => {
   loading = true;
-  onOffSpinnerEvent(loading);
+  spinnerEvent(loading);
   listOfFilesToCopy.length = 0;
   // container.innerHTML = "";
 
@@ -151,20 +151,21 @@ const readAllFileAsync = async (directoriesSelected) => {
         console.log("files => ", files);
         files.map((file) => {
           const path = join(directory.toString(), file.name);
-          console.log("file", file);
+          // console.log("file", file);
           if (file.isFile()) container.append(addNewFile(file.name, path));
-          if (file.isDirectory()) innerDirectory.push(path);
+          // if (file.isDirectory()) innerDirectory.push(path);
         });
         const folders = files.filter((file) => file.isDirectory());
         innerDirectory = folders.map((folder) =>
           join(folder.path, folder.name)
         );
-        if (innerDirectory.length === 0) {
-          console.log("returned");
-          return;
-        }
-        await readAllFileAsync(innerDirectory);
+        // if (innerDirectory.length === 0) {
+        //   loading = false;
+        //   onOffSpinnerEvent(loading);
+        //   return;
+        // }
         console.log("innerDirectory", innerDirectory);
+        return await readAllFileAsync(innerDirectory);
       }
     );
 
@@ -190,22 +191,35 @@ const readAllFileAsync = async (directoriesSelected) => {
     //   return;
     // }
     // await readAllFileAsync(innerDirectory);
-
-
-
   });
 };
 
+async function loadingOn() {
+  return Promise.resolve(spinnerEvent((loading = true)));
+}
+
+async function loadingOff() {
+  return Promise.resolve(spinnerEvent((loading = false)));
+}
+
+const start = async (directoriesSelected,callback) => {
+  await loadingOn();
+
+  return new Promise((resolve, reject) => {
+    resolve(readAllFileAsync(directoriesSelected));
+    return { success: true };
+  }).then((success) => {
+    console.log(success);
+    if (success) loadingOff();
+  });
+
+};
+
 ipcRenderer.on("open-file", async (event, result) => {
-  loading = true;
-  onOffSpinnerEvent(loading);
-  
   // result.directoriesSelected.map(async (path) => await readAllFileAsync(path));
   // readAllFile(result.directoriesSelected);
-  await readAllFileAsync(result.directoriesSelected);
-
-  loading = false;
-  onOffSpinnerEvent(loading);
+  // await readAllFileAsync(result.directoriesSelected);
+  await start(result.directoriesSelected);
 });
 
 convertButton?.addEventListener("click", async () => {
