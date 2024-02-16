@@ -10,6 +10,7 @@ const convertButton = document.getElementById("convertButton");
 const leftContainer = document.getElementById("leftContainer");
 const listOfFiles = document.getElementById("listOfFiles");
 let listOfFilesToCopy = [];
+let directoriesSelected = [];
 
 let loading = false;
 
@@ -141,7 +142,7 @@ const readAllFileAsync = async (directoriesSelected) => {
 
   console.log("directoriesSelected", directoriesSelected);
   let innerDirectory = [];
-  directoriesSelected.map(async (directory) => {
+  directoriesSelected?.map(async (directory) => {
     ////////////// VARIANT_1 /////////////////
     await readdir(directory.toString(), { withFileTypes: true }).then(
       async (files) => {
@@ -195,31 +196,29 @@ const readAllFileAsync = async (directoriesSelected) => {
 };
 
 async function loadingOn() {
-  return Promise.resolve(spinnerEvent((loading = true)));
+  console.log("loading start");
+  return await Promise.resolve(spinnerEvent((loading = true)));
 }
 
 async function loadingOff() {
-  return Promise.resolve(spinnerEvent((loading = false)));
+  console.log("loading finished");
+  return await Promise.resolve(spinnerEvent((loading = false)));
 }
 
-const start = async (directoriesSelected,callback) => {
+const start = async (directoriesSelected) => {
   await loadingOn();
-
-  return new Promise((resolve, reject) => {
-    resolve(readAllFileAsync(directoriesSelected));
-    return { success: true };
-  }).then((success) => {
-    console.log(success);
-    if (success) loadingOff();
-  });
-
+  const getData = readAllFileAsync(directoriesSelected);
+  await loadingOff();
 };
 
 ipcRenderer.on("open-file", async (event, result) => {
   // result.directoriesSelected.map(async (path) => await readAllFileAsync(path));
   // readAllFile(result.directoriesSelected);
   // await readAllFileAsync(result.directoriesSelected);
-  await start(result.directoriesSelected);
+  // await start(result.directoriesSelected);
+
+  directoriesSelected = result.directoriesSelected;
+  start(result.directoriesSelected);
 });
 
 convertButton?.addEventListener("click", async () => {
